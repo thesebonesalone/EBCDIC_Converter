@@ -204,7 +204,10 @@ public class EBCDICConverter extends SlantwiseConverter {
 
 
         //if database returns null prompt response from user and save to database
+        if (index == null)
+        {
 
+        }
 
         return null;
     }
