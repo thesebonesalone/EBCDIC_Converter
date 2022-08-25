@@ -2,24 +2,33 @@ package com.company.impls;
 
 import com.company.abstracts.SlantwiseConverter;
 
-import java.lang.reflect.Array;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.*;
 
 public class EBCDICConverter extends SlantwiseConverter {
 
-    public EBCDICConverter()
+    private EBCDICConverter()
     {
-        super();
+        defineMap();
+        defineOfflineMap();
     }
+    private static EBCDICConverter singletonConverter;
+   public static EBCDICConverter getInstance()
+   {
+       if (singletonConverter == null)
+       {
+           synchronized (EBCDICConverter.class) {
+               if (singletonConverter == null) {
+                   return new EBCDICConverter();
+               }
+           }
 
-
-
-
+       }
+       return singletonConverter;
+   }
     @Override
     public void defineMap() {
         characterMap.put("\n", 15);
@@ -124,22 +133,20 @@ public class EBCDICConverter extends SlantwiseConverter {
         ArrayList<Integer> intList = new ArrayList<>();
         for (int i = 0; i < input.length(); i++)
         {
-            char ch = ' ';
-            try {
-                ch = input.charAt(i);
-            } catch (NullPointerException e)
+            char ch = input.charAt(i);
+            Integer adder = characterMap.get("" + ch);
+            if (adder == null)
             {
-                //logic to create new input for sanitizer
-
-
+                ArrayList<Integer> san = sanitize(ch);
+                //add arbitrary length string to conversion
+                for (Integer j : san)
+                {
+                    intList.add(j);
+                }
+            } else {
+                intList.add(adder);
             }
-            intList.add(characterMap.get("" + ch));
         }
-
-
-
-
-
         return intList;
     }
 
@@ -157,6 +164,40 @@ public class EBCDICConverter extends SlantwiseConverter {
             str.append(s);
         }
         return str.toString();
+    }
+
+    @Override
+    public String decode(String input) {
+       ArrayList<Integer> decoded = new ArrayList<>();
+       for (int i = 0; i < input.length(); i += 8)
+       {
+           Integer num = Integer.parseInt(input.substring(i, i+8),2);
+           decoded.add(num);
+       }
+        return decode(decoded);
+    }
+
+    @Override
+    public String decode(ArrayList<Integer> input) {
+        String decoded = "";
+        HashMap<Integer, String> backwards = new HashMap<>();
+        //convert backwards
+        Set<Map.Entry<String,Integer>> entrySet = characterMap.entrySet();
+        for (Map.Entry e : entrySet)
+        {
+            backwards.put((Integer)e.getValue(), (String)e.getKey());
+        }
+        for (Integer in : input)
+        {
+            decoded += backwards.get(in);
+        }
+        return decoded;
+    }
+
+    //on load define offline map to match characters
+    @Override
+    public void defineOfflineMap() {
+
     }
 
     @Override
@@ -190,26 +231,28 @@ public class EBCDICConverter extends SlantwiseConverter {
     }
 
     @Override
-    public String sanitize(char input) {
+    public ArrayList<Integer> sanitize(char input) {
 
         //start call to offline map
-        String index = offlineMap.get(input);
-
-
+        String index = offlineMap.get(input + "");
         //if map is empty, reach out to database
         if (index == null)
         {
 
         }
 
-
         //if database returns null prompt response from user and save to database
         if (index == null)
         {
+            Scanner sc = new Scanner(System.in);
+            System.out.println("Please input conversion string for character \"" + input + "\"");
 
+            //space to log character that was missing
+            String slant = sc.nextLine();
+            offlineMap.put(input + "",slant);
+            index = slant;
         }
-
-        return null;
+        return convert(index);
     }
 
     @Override

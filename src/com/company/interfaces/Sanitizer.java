@@ -1,12 +1,16 @@
 package com.company.interfaces;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public interface Sanitizer {
 
     //hashmap to store offline conversions
+    //Need to make singleton
     HashMap<String, String> offlineMap = new HashMap<>();
+
+    void defineOfflineMap();
 
     //define api url
     String endpoint();
@@ -17,7 +21,7 @@ public interface Sanitizer {
     //define connection
     Connection getConnection();
 
-    public String sanitize(char input);
+    public ArrayList<Integer> sanitize(char input);
 
     public String commit(String key, String replacement);
 

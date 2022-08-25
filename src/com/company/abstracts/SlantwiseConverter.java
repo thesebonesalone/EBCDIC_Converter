@@ -5,10 +5,5 @@ import com.company.interfaces.Sanitizer;
 
 public abstract class SlantwiseConverter implements Converter, Sanitizer {
 
-    public SlantwiseConverter()
-    {
-        defineMap();
-    }
-
 
 }
